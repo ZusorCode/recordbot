@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/fitty@2.2.6/dist/fitty.min.js"></script>
+    <%- user.custom_html %>
+    <title>RecordBot</title>
+</head>
+<body>
+<div>
+    <div id="text_content">
+        Connecting...
+    </div>
+</div>
+
+</body>
+<style>
+    body {
+        background-color: transparent;
+        padding: 20px;
+    }
+
+    #text_content {
+        margin: 0;
+        position: absolute;
+        top: 50%;
+        text-align: center;
+        transform: translate(0, -50%);
+    }
+
+</style>
+
+<style>
+    /* Custom user css */
+
+    <%- user.custom_css %>
+
+</style>
+<script>
+    fitty("#text_content", {multiLine: false});
+
+    let last_heartbeat = Date.now();
+
+    function setText(text) {
+        if (/<\/?[a-z][\s\S]*>/i.test(text)) {
+            document.getElementById("text_content").innerHTML = text
+        } else {
+            document.getElementById("text_content").innerText = text
+        }
+    }
+
+
+    const socket = new WebSocket("<%- ws_url %>/ws");
+
+    socket.addEventListener("open", function (event) {
+        let token_parts = window.location.href.split("/");
+        let token = token_parts[token_parts.length - 1];
+        socket.send("auth_request " + token);
+        console.log("requesting auth with token " + token)
+    });
+
+
+    socket.addEventListener('close', function (event) {
+        // So that we don't immediately show error on reload
+        setTimeout(function () {
+            setText("Got Error...")
+            setTimeout(function () {
+                location.reload(1);
+            }, 5000);
+        }, 2000)
+    });
+
+
+    socket.addEventListener('message', function (event) {
+        if (event.data === "auth_ok") {
+            console.log("auth is ok");
+            console.log("subscribing to changes");
+            socket.send("subscribe 1");
+
+
+        } else if (event.data === "auth_error" || event.data === "no_auth_error") {
+            console.log("error with auth");
+            setText("Auth Error. Something is wrong!")
+
+        } else if (event.data.startsWith("record_payload")) {
+            let payload = event.data.replace("record_payload ", "");
+            setText(payload);
+            console.log("set text to " + payload);
+
+
+        } else if (event.data === "subscribe_change_ok") {
+            console.log("subscribe is ok");
+            console.log("setting text for first time");
+            socket.send("get_message");
+
+        } else if (event.data === "record_updated") {
+            console.log("got record update info");
+            socket.send("get_message");
+        } else if (event.data === "refresh") {
+            console.log("refreshing");
+            location.reload()
+        } else if (event.data === "hbs") {
+            console.log("got heartbeat")
+            last_heartbeat = Date.now()
+        }
+    });
+
+    function auto_heartbeat() {
+        if (Date.now() - last_heartbeat > 20000) {
+            socket.send("hbc")
+            console.log("sending heartbeat")
+        }
+
+        if (Date.now() - last_heartbeat > 600000) {
+            if (document.getElementById("text_content").innerHTML !== "Connecting...") {
+                setText("Connecting...")
+            }
+        }
+    }
+
+    setInterval(auto_heartbeat, 1000)
+</script>
+
+</html>

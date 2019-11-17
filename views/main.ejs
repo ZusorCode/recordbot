@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <title>RecordBot</title>
+</head>
+<body onload="initialize()">
+<section class="section">
+    <div class="container">
+
+        <h1 class="title is-1">RecordBot - <span id="username"></span> - <span><a href="/logout">Log out</a></span></h1>
+        <p class="subtitle">Displaying record as: <span id="record_display"><%- record_message %></span><br>
+        Win: <span id="win_number"><%- record.win %></span> Loss: <span id="loss_number"><%- record.loss %></span> Draw: <span id="draw_number"><%- record.draw %></span></p>
+
+        <div class="buttons">
+            <button class="button is-success" onclick="makeApiRequest('win')">Record Win</button>
+            <button class="button is-dark" onclick="makeApiRequest('loss')">Record Loss</button>
+            <button class="button is-warning" onclick="makeApiRequest('draw')">Record Draw</button>
+            <button class="button is-danger" onclick="makeApiRequest('reset')">Reset Record</button>
+        </div>
+
+        <div class="is-half-desktop column is-paddingless">
+            <form action="/change_settings/" method="post">
+                <h3 class="title is-3">Settings</h3>
+
+                <div>
+                    <input class="checkbox" type="checkbox" id="enable_twitch_bot" name="enable_twitch_bot">
+                    <label for="enable_twitch_bot">Enable Twitch bot</label>
+                </div>
+
+                <div>
+                    <input class="checkbox" type="checkbox" id="enable_record_reset" name="enable_auto_reset">
+                    <label for="enable_record_reset">Enable automatic record reset</label>
+                </div>
+
+                <label class="label" for="record_text">Text for the record</label>
+                <textarea class="textarea" id="record_text" name="record_text" cols="40" rows="2"><%- user.record_text%></textarea>
+                <p class="help">Use %w %l %d for win/loss/draw. Tags are optional <br>Regular HTML tags work, Script is disabled for this</p>
+
+                <label class="label" for="record_text_chat">Text for the record in Twitch Chat</label>
+                <textarea class="textarea" id="record_text_chat" name="record_text_chat" cols="40" rows="2"><%- user.record_text_chat%></textarea>
+                <p class="help">Use %w %l %d for win/loss/draw. Tags are optional</p>
+
+                <label class="label" for="record_css">Custom CSS. For nerds only</label>
+                <textarea class="textarea" id="record_css" name="record_css" cols="40" rows="2"><%- user.custom_css%></textarea>
+                <p class="help">Replaces default CSS.</p>
+
+                <label class="label" for="record_html">Custom HTML. For nerds only</label>
+                <textarea class="textarea" id="record_html" name="record_html" cols="40" rows="2"><%- user.custom_html%></textarea>
+                <p class="help">Replaces default extra HTML.</p>
+
+                <input type="hidden" id="token" name="token">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="control">
+                    <button class="button is-primary">Change</button>
+                </div>
+
+            </form>
+
+        </div>
+        <br>
+
+        <h3 class="title is-3">Account</h3>
+        <p class="subtitle">Get info and manage your account. <b>ALL ACTIONS ARE IMMEDIATE WITH NO WARNING!!</b><br>
+            If you regenerate your token, your OBS URL will change. Useful in case your token gets leaked.<br>
+            If you delete your account, you should remove the connection to this Bot in Twitch.
+        </p>
+        <div class="buttons">
+            <a class="button is-success" href="/data">Export Data</a>
+            <button class="button is-warning" onclick="document.getElementById('regenerate_token_form').submit()">Regenerate your token</button>
+            <button class="button is-danger" onclick="document.getElementById('delete_account_form').submit()">Delete your account</button>
+        </div>
+
+        <form action="/regenerate_token" method="post" id="regenerate_token_form">
+            <input type="hidden" id="token" name="token">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        </form>
+
+        <form action="/delete_account" method="post" id="delete_account_form">
+            <input type="hidden" id="token" name="token">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        </form>
+
+
+        <h3 class="title is-3">Add to OBS</h3>
+
+        <div class="is-paddingless is-marginless" style="display: none" id="danger_section">
+            <p class="subtitle">Add the following link as a browser-source in OBS <br>
+                <span id="url_text" onclick="copyToClipboard()"></span> <span onclick="copyToClipboard()" id="copy_text" style="color: blue">Copy</span>
+            </p>
+        </div>
+
+        <div class="is-paddingless is-marginless" id="warning_section">
+            <p class="subtitle">This section contains your token which can be used to change your record. Do not show anyone this section!</p>
+            <div class="buttons">
+                <button class="button is-danger" id="warning_button" onclick="showHidden()">Show section</button>
+            </div>
+        </div>
+
+
+
+
+    </div>
+</section>
+<script>
+    const USERNAME = "<%= username %>";
+    const TOKEN = "<%= user.token %>";
+    const BASE_URL = "<%- url %>"
+    const OBS_URL = BASE_URL + "/embed/" + TOKEN;
+    const API_URL = BASE_URL + "/api/";
+    const TWITCH_BOT_ENABLED = <%= !!user.enabled %>;
+    const RECORD_RESET = <%= !!user.record_reset %>;
+
+    function initialize() {
+        document.getElementById("username").innerText = USERNAME;
+        document.getElementById("url_text").innerText = OBS_URL;
+        document.getElementById("enable_twitch_bot").checked = TWITCH_BOT_ENABLED;
+        document.getElementById("enable_record_reset").checked = RECORD_RESET;
+        document.getElementById("token").value = TOKEN;
+    }
+
+
+
+    function makeApiRequest(action) {
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", API_URL, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                let json = JSON.parse(xhr.responseText);
+                if (json.error === undefined && json.success === true) {
+                    updateRecord()
+                }
+            }
+        };
+        let data = JSON.stringify({action: action, token: TOKEN});
+        xhr.send(data);
+    }
+
+
+    function updateRecord() {
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", API_URL, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                let json = JSON.parse(xhr.responseText);
+                if (json.error === undefined && json.success === true) {
+                    document.getElementById("record_display").innerHTML = json.record_message;
+                    document.getElementById("win_number").innerText = json.record.win;
+                    document.getElementById("loss_number").innerText = json.record.loss;
+                    document.getElementById("draw_number").innerText = json.record.draw;
+
+                }
+            }
+        };
+        let data = JSON.stringify({action: "record", token: TOKEN});
+        xhr.send(data);
+    }
+
+    function showHidden() {
+        document.getElementById("danger_section").style.display = "block";
+        document.getElementById("warning_section").style.display = "none";
+    }
+
+    function copyToClipboard() {
+        navigator.clipboard.writeText(OBS_URL);
+        document.getElementById("copy_text").style.color = "green";
+        document.getElementById("copy_text").innerText = "Copied";
+        setTimeout(resetStyle, 2000)
+    }
+
+    function resetStyle() {
+        document.getElementById("copy_text").style.color = "blue";
+        document.getElementById("copy_text").innerText = "Copy";
+    }
+</script>
+</body>
+</html>
