@@ -291,7 +291,7 @@ function get_user_or_create(channel_id, username) {
 
         db.prepare("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(channel_id, username, user_token, 1, 1, default_text, default_text_chat, default_custom_html, default_custom_css);
 
-        Bot.join(username);
+        Bot.join(username.toLowerCase());
         twitchWebhook.subscribe('streams', {
             user_id: channel_id
         });
@@ -395,6 +395,17 @@ app.post("/change_settings", csrfProtection, function (req, res) {
     let record_html = req.body.record_html;
     let record_css = req.body.record_css;
     let token = req.body.token;
+    if (enable) {
+        const username = db.prepare("SELECT username FROM users WHERE token = ?").get(token);
+        if (username !== undefined) {
+            Bot.join(username.username.toLowerCase())
+        }
+    }else{
+        const username = db.prepare("SELECT username FROM users WHERE token = ?").get(token);
+        if (username !== undefined) {
+            Bot.part(username.username.toLowerCase())
+        }
+    }
     const statement = db.prepare("UPDATE users SET enabled = ?, record_reset = ?, record_text = ?, record_text_chat = ?, custom_html = ?, custom_css = ? WHERE token = ?");
     const updates = statement.run(enable, auto_record, record_text, record_text_chat, record_html, record_css, token);
     refresh_client(token);
