@@ -10,23 +10,76 @@
 <section class="section">
     <div class="container">
         <h1 class="title is-1">RecordBot</h1>
-        <p class="subtitle">Let mods control your record and customize its appearance</p>
+        <p class="subtitle">Let mods control your record on stream and focus on other things.</p>
         <div class="buttons">
             <a class="button is-black" style="background-color: #9146FF" href="/auth">Log in with Twitch</a>
         </div>
         <h2 class="title is-2">FAQ</h2>
+
+        <h3 class="title is-3">Why do I need this?</h3>
+        <p class="subtitle">
+            Instead of using an OBS Text source you need to edit, the embed can be changed by a mod just using commands.
+        </p>
+        <pre>!win !loss !draw !reset (or the abbreviated versions !w !l !d<br>!record (or !r) can be used by anyone to view the record</pre>
+        <p class="subtitle">The embed is fully customizable, updates in around .75 seconds and it resets when you start
+            streaming.</p>
+
         <h3 class="title is-3">How does it work?</h3>
-        <iframe width="660" height="415" src="https://www.youtube.com/embed/CAFHZPPd-pc?modestbranding=1" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <p class="subtitle">Here's a video showing the basics!</p>
+        <div class="is-half-desktop column is-paddingless">
+            <div class="video-container">
+                <iframe width="660" height="415"
+                        src="https://www.youtube-nocookie.com/embed/CAFHZPPd-pc?modestbranding=1" frameborder="0"
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+            </div>
+        </div>
+
+
+        <h3 class="title is-3">My record doesn't reset when I start streaming!</h3>
+        <p class="subtitle">
+            Make sure automatic record reset is on. The record reset is based on when your live notification is sent to
+            viewers as the bot uses that service and because that notification can take some time it can take up to 3
+            minutes for your record to reset.
+        </p>
+
+
+        <h3 class="title is-3">How do I customize the message?</h3>
+        <p class="subtitle">In your settings, you can edit the message in the embed and in chat. Use %w %l and %d for
+            the numbers. You can leave out numbers (in case you don't want to show draws for example).</p>
+
+
+        <h3 class="title is-3">How do I customize the look?</h3>
+        <p class="subtitle">You can fully customize the look of it by using HTML and CSS. If you're familiar with code,
+            <a
+                    href="https://codepen.io/zusor/pen/OJJrEYZ">here's a CodePen</a> for easier editing. Just
+            paste in your embed link on the right and try out different looks. If you're not familiar with HTML and CSS,
+            DM me at the contact details below and I'll try to help!</p>
         <h3 class="title is-3">What data does this store?</h3>
-        <p class="subtitle">Not a lot. It stores your channels username and ID. No other info about you or your channel is stored.<br>
+        <p class="subtitle">Not a lot. It stores your channels username and ID. It also stores your record (duh) and a
+            token to identify your account.
             Log in and click on Export Data to see all your data.</p>
         <h3 class="title is-3">I have more questions/I need help customizing this</h3>
         <p class="subtitle">Contact me on Discord and I'll try to help: Zusor#4172</p>
 
 
-
     </div>
 </section>
+<style>
+    .video-container {
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 */
+        height: 0;
+    }
+
+    .video-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>
 
 </body>
 </html>
