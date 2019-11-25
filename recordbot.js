@@ -284,7 +284,7 @@ function get_user_or_create(channel_id, username) {
     if (user === undefined) {
         console.debug("Creating user with username " + username);
         const user_token = crypto.randomBytes(25).toString('hex');
-        const default_text = "W - L %w %l";
+        const default_text = "Record %w-%l";
         const default_text_chat = "Record: W - L %w %l";
         const default_custom_css = "body {font-family: 'Roboto Condensed', sans-serif;}\n#text_content {color: white;text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;}\n";
         const default_custom_html = "<link href='https://fonts.googleapis.com/css?family=Roboto+Condensed&display=swap' rel='stylesheet'>";
