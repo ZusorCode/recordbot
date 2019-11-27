@@ -24,6 +24,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
+app.use('/bulma', express.static(__dirname + '/node_modules/bulma/css'));
+app.use('/fitty', express.static(__dirname + '/node_modules/fitty/dist'));
 
 let expressWs = require('express-ws')(app);
 
